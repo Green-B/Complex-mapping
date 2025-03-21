@@ -21,8 +21,8 @@ class ComplexMapper:
         self.updateDisplay()
         
     def updateDisplay(self):
-        ax1.cla()
-        ax2.cla()
+        ax1.clear()
+        ax2.clear()
         for z_curve in self.z_pts:
             ax1.plot(np.real(z_curve), np.imag(z_curve), color="#0000B0")
             # Evaluate in a function to limit the scope of a variable with a very general name like z
@@ -58,43 +58,50 @@ class ComplexMapper:
     def fx_str_builder(self, str):
         if str=="Clear":
             self.fx_str = ""
-            print("test")
-        elif str=="Bkspc":
+        elif str=="Back":
             self.fx_str = self.fx_str[:-1]
         else:
             self.fx_str += str
-        print(self.fx_str)
-
+        ax_fx_str.clear()
+        ax_fx_str.text(0.5, 0.5, "f(z) = {}".format(self.fx_str), horizontalalignment="center", verticalalignment="center")
+        ax_fx_str.set_xticks([])
+        ax_fx_str.set_yticks([])
+        plt.draw()
+    
 
 CM = ComplexMapper(fig)
 
-# Set up "graphing calculator" buttons for defining functions
-ax_blank.spines[["top", "bottom", "left", "right"]].set_visible(False)
-ax_blank.set_xticks([])
-ax_blank.set_yticks([])
-
+(N_button_rows, N_button_cols) = (5, 5)
 (left_edge, top_edge) = (0.7, 0.8)
-[button_width, button_height] = [0.05, 0.1]
-[button_width_margin, button_height_margin] = [button_width/2, button_height/2]
-
-button_strings = ["Clear", "Bkspc", "(", ")",
-                  "**", "np.log(", "np.e", "np.pi",
-                  "7", "8", "9", "/",
-                  "4", "5", "6", "*",
-                  "1", "2", "3", "-",
-                  "z", "0", "1j", "+"]
+[button_width, button_height] = [0.045, 0.1]
+[button_width_margin, button_height_margin] = [button_width/4, button_height/4]
+# Mapping function readout in the GUI; give it button height but the width of all buttons together
+ax_fx_str = fig.add_axes((left_edge, top_edge, N_button_rows*button_width+(N_button_rows-1)*button_width_margin, button_height))
+CM.fx_str_builder("")
+# Update top_edge so buttons are below text box
+top_edge -= button_height+button_height_margin
+# Used in actual function
+button_strings = ["Clear", "Back", "(", ")", "np.log(",
+                  "7", "8", "9", "/", "np.exp(",
+                  "4", "5", "6", "*", "np.pi",
+                  "1", "2", "3", "-", "1j",
+                  "z", "0", ".", "+", "**",]
+# Used in GUI
+button_labels = ["Clear", "Back", "(", ")", "ln",
+                  "7", "8", "9", "/", "exp",
+                  "4", "5", "6", "×", "π",
+                  "1", "2", "3", "–", "$i$",
+                  "z", "0", ".", "+", "^",]
 button_axes = []
 buttons = []
 def make_button(row, col, str_index):
     button_horizontal_position = left_edge + col*(button_width+button_width_margin)
     button_vertical_position = top_edge - row*(button_height+button_height_margin)
     button_axes.append(fig.add_axes((button_horizontal_position, button_vertical_position, button_width, button_height)))
-    buttons.append(Button(button_axes[-1], button_strings[str_index], color="0.75", hovercolor="0.875"))
+    buttons.append(Button(button_axes[-1], button_labels[str_index], color="0.75", hovercolor="0.875"))
     buttons[-1].on_clicked(func=lambda x: CM.fx_str_builder(button_strings[str_index]))
-
-for row in range(6):
-    for col in range(4):
-        make_button(row, col, col+4*row)
-
+for row in range(N_button_rows):
+    for col in range(N_button_cols):
+        make_button(row, col, col+row*N_button_cols)
 
 plt.show()
