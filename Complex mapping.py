@@ -7,7 +7,7 @@ width_ratios = [1,1,1]
 fig_size = [fig_height*np.sum(np.array(width_ratios)), fig_height]
 fig, [ax1, ax2, ax_blank] = plt.subplots(1, 3, width_ratios=width_ratios, figsize=fig_size)
 
-plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+plt.subplots_adjust(top=0.9, bottom=0.1, left=0.03, right=0.97, hspace=0.1, wspace=0.1)
 
 class ComplexMapper:
     
@@ -15,14 +15,25 @@ class ComplexMapper:
         self.z_pts = []
         self.fx_str = ["z", "**", "2"]
         self.left_click_down = False
-        self.press_cb = fig.canvas.mpl_connect('button_press_event', self.on_press)
-        self.move_cb = fig.canvas.mpl_connect('motion_notify_event', self.on_move)
-        self.release_cb = fig.canvas.mpl_connect('button_release_event', self.on_release)
+        self.total_scroll_amount = 0
+        self.press_cb = fig.canvas.mpl_connect("button_press_event", self.on_press)
+        self.move_cb = fig.canvas.mpl_connect("motion_notify_event", self.on_move)
+        self.release_cb = fig.canvas.mpl_connect("button_release_event", self.on_release)
+        self.scroll_cb = fig.canvas.mpl_connect("scroll_event", self.on_scroll)
         self.update_plot_display()
         
     def update_plot_display(self):
-        ax1.clear()
-        ax2.clear()
+        for ax in [ax1, ax2]:
+            ax.clear()
+            ax.autoscale(enable=False)
+            base_ax_lim = np.array([-2,2])
+            scaled_ax_lim = base_ax_lim*((1.1)**self.total_scroll_amount)
+            ax.set_xlim(scaled_ax_lim)
+            ax.set_ylim(scaled_ax_lim)
+            ax.spines[["left", "bottom"]].set_position("zero")
+            ax.spines[["right", "top"]].set_visible(False)
+            ax.set_xticks(np.linspace(scaled_ax_lim[0], scaled_ax_lim[1], 5))
+            ax.set_yticks(np.linspace(scaled_ax_lim[0], scaled_ax_lim[-1], 5))
         try:
             for z_curve in self.z_pts:
                 ax1.plot(np.real(z_curve), np.imag(z_curve), color="#0000B0")
@@ -30,12 +41,6 @@ class ComplexMapper:
                 def fx(): z = z_curve; return eval("".join(self.fx_str))
                 w_curve = fx()
                 ax2.plot(np.real(w_curve), np.imag(w_curve), color="#B00000")
-            # set_xlim doesn't seem to work... plotting ghost data is a workaround to set the axis limits.
-            for ax in [ax1, ax2]:
-                ax.plot([1,-1,0,0], [0,0,1,-1], color="white", linestyle="None", marker="None")
-                ax.axis("equal")
-                ax.spines[["left", "bottom"]].set_position("zero")
-                ax.spines[["right", "top"]].set_visible(False)
             plt.draw()
         except Exception:
             print("\nInvalid function syntax - check your complex map entry and try again.")
@@ -55,6 +60,10 @@ class ComplexMapper:
         if event.button==1 and event.inaxes==ax1:
             self.left_click_down = False
             self.update_plot_display()
+    
+    def on_scroll(self, event):
+        self.total_scroll_amount -= event.step
+        self.update_plot_display()
     
     def fx_str_builder(self, str):
         if str=="Clear":
