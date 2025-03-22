@@ -13,61 +13,72 @@ class ComplexMapper:
     
     def __init__(self, fig):
         self.z_pts = []
-        self.fx_str = "z**2"
+        self.fx_str = ["z", "**", "2"]
         self.left_click_down = False
-        self.press_cb = fig.canvas.mpl_connect('button_press_event', self.onPress)
-        self.move_cb = fig.canvas.mpl_connect('motion_notify_event', self.onMove)
-        self.release_cb = fig.canvas.mpl_connect('button_release_event', self.onRelease)
-        self.updateDisplay()
+        self.press_cb = fig.canvas.mpl_connect('button_press_event', self.on_press)
+        self.move_cb = fig.canvas.mpl_connect('motion_notify_event', self.on_move)
+        self.release_cb = fig.canvas.mpl_connect('button_release_event', self.on_release)
+        self.update_plot_display()
         
-    def updateDisplay(self):
+    def update_plot_display(self):
         ax1.clear()
         ax2.clear()
-        for z_curve in self.z_pts:
-            ax1.plot(np.real(z_curve), np.imag(z_curve), color="#0000B0")
-            # Evaluate in a function to limit the scope of a variable with a very general name like z
-            def fx(): z = z_curve; return eval(self.fx_str)
-            w_curve = fx()
-            ax2.plot(np.real(w_curve), np.imag(w_curve), color="#B00000")
-        ax1.plot([1,-1,0,0], [0,0,1,-1], color="white", linestyle="None", marker="None")
-        ax2.plot([1,-1,0,0], [0,0,1,-1], color="white", linestyle="None", marker="None")
-        ax1.set_ylim([-1,1])
-        ax1.set_xlim([-1,1])
-        ax1.axis("equal")
-        ax2.set_ylim([-1,1])
-        ax2.set_xlim([-1,1])
-        ax2.axis("equal")
-        plt.draw()
+        try:
+            for z_curve in self.z_pts:
+                ax1.plot(np.real(z_curve), np.imag(z_curve), color="#0000B0")
+                # Evaluate in a function to limit the scope of a variable with a very general name like z
+                def fx(): z = z_curve; return eval("".join(self.fx_str))
+                w_curve = fx()
+                ax2.plot(np.real(w_curve), np.imag(w_curve), color="#B00000")
+            # set_xlim doesn't seem to work... plotting ghost data is a workaround to set the axis limits.
+            for ax in [ax1, ax2]:
+                ax.plot([1,-1,0,0], [0,0,1,-1], color="white", linestyle="None", marker="None")
+                ax.axis("equal")
+                ax.spines[["left", "bottom"]].set_position("zero")
+                ax.spines[["right", "top"]].set_visible(False)
+            plt.draw()
+        except Exception:
+            print("\nInvalid function syntax - check your complex map entry and try again.")
     
-    def onPress(self, event):
+    def on_press(self, event):
         if event.button==1 and event.inaxes==ax1:
             self.z_pts.append(np.array([event.xdata + 1j*event.ydata]))
             self.left_click_down = True
-            self.updateDisplay()
+            self.update_plot_display()
     
-    def onMove(self, event):
+    def on_move(self, event):
         if event.inaxes==ax1 and self.left_click_down==True:
             self.z_pts[-1] = np.append(self.z_pts[-1], event.xdata + 1j*event.ydata)
-            self.updateDisplay()
+            self.update_plot_display()
     
-    def onRelease(self, event):
+    def on_release(self, event):
         if event.button==1 and event.inaxes==ax1:
             self.left_click_down = False
-            self.updateDisplay()
+            self.update_plot_display()
     
     def fx_str_builder(self, str):
         if str=="Clear":
-            self.fx_str = ""
+            self.fx_str = []
         elif str=="Back":
-            self.fx_str = self.fx_str[:-1]
+            self.fx_str.pop()
         else:
-            self.fx_str += str
+            self.fx_str.append(str)
+        self.update_fx_str_display()
+    
+    def update_fx_str_display(self):
         ax_fx_str.clear()
-        ax_fx_str.text(0.5, 0.5, "f(z) = {}".format(self.fx_str), horizontalalignment="center", verticalalignment="center")
+        # Use Greek pi, use i not 1j, and hide the "np." packages in the displayed text
+        fx_str_display = "f(z) = {}".format("".join(self.fx_str)).replace("np.pi", "π").replace("1j", "i").replace("np.", "")
+        ax_fx_str.text(0.5, 0.5, fx_str_display, horizontalalignment="center", verticalalignment="center")
+        ax_blank.set_visible(False)
         ax_fx_str.set_xticks([])
         ax_fx_str.set_yticks([])
         plt.draw()
     
+    def clear_plot_axes(self):
+        self.z_pts = []
+        self.w_pts = []
+        self.update_plot_display()
 
 CM = ComplexMapper(fig)
 
@@ -76,8 +87,8 @@ CM = ComplexMapper(fig)
 [button_width, button_height] = [0.045, 0.1]
 [button_width_margin, button_height_margin] = [button_width/4, button_height/4]
 # Mapping function readout in the GUI; give it button height but the width of all buttons together
-ax_fx_str = fig.add_axes((left_edge, top_edge, N_button_rows*button_width+(N_button_rows-1)*button_width_margin, button_height))
-CM.fx_str_builder("")
+ax_fx_str = fig.add_axes((left_edge, top_edge, N_button_cols*button_width+(N_button_cols-1)*button_width_margin, button_height))
+CM.update_fx_str_display()
 # Update top_edge so buttons are below text box
 top_edge -= button_height+button_height_margin
 # Used in actual function
@@ -100,8 +111,13 @@ def make_button(row, col, str_index):
     button_axes.append(fig.add_axes((button_horizontal_position, button_vertical_position, button_width, button_height)))
     buttons.append(Button(button_axes[-1], button_labels[str_index], color="0.75", hovercolor="0.875"))
     buttons[-1].on_clicked(func=lambda x: CM.fx_str_builder(button_strings[str_index]))
+# Make calcluator buttons
 for row in range(N_button_rows):
     for col in range(N_button_cols):
         make_button(row, col, col+row*N_button_cols)
+# Make button to clear the plots
+ax_clear = fig.add_axes((left_edge, top_edge-N_button_rows*button_height-N_button_rows*button_height_margin, N_button_rows*button_width+(N_button_rows-1)*button_width_margin, button_height))
+button_clear = Button(ax_clear, "Clear axes", color="0.75", hovercolor="0.875")
+button_clear.on_clicked(func=lambda x: CM.clear_plot_axes())
 
 plt.show()
