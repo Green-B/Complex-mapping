@@ -6,6 +6,7 @@ fig_height = 4
 width_ratios = [1,1,1]
 fig_size = [fig_height*np.sum(np.array(width_ratios)), fig_height]
 fig, [ax1, ax2, ax_blank] = plt.subplots(1, 3, width_ratios=width_ratios, figsize=fig_size)
+fig.set_facecolor("0.9")
 
 (subplots_top, subplots_left) = (0.9, 0.03)
 (subplots_right, subplots_bottom) = (1-subplots_left, 1-subplots_top)
@@ -60,12 +61,14 @@ class ComplexMapper:
             scaled_ax_lim = base_ax_lim*((1.1)**self.total_scroll_amount)
             ax.set_xlim(scaled_ax_lim)
             ax.set_ylim(scaled_ax_lim)
+            [(scaled_ax_min, scaled_ax_max), scaled_ax_range] = [scaled_ax_lim, scaled_ax_lim[1]-scaled_ax_lim[0]]
             ax.spines[["left", "bottom"]].set_position("zero")
             ax.spines[["right", "top"]].set_visible(False)
-            ax.set_xticks(np.linspace(scaled_ax_lim[0], scaled_ax_lim[1], 5))
-            ax.set_yticks(np.linspace(scaled_ax_lim[0], scaled_ax_lim[-1], 5))
-        ax1.text(ax1.get_xlim()[0], ax1.get_ylim()[1], "z", horizontalalignment="left", verticalalignment="top", fontsize=12)
-        ax2.text(ax2.get_xlim()[0], ax2.get_ylim()[1], "f(z)", horizontalalignment="left", verticalalignment="top", fontsize=12)
+            ax.set_xticks(np.linspace(scaled_ax_min, scaled_ax_max, 5))
+            ax.set_yticks(np.linspace(scaled_ax_min, scaled_ax_max, 5))
+        label_inset = 0.025
+        ax1.text(scaled_ax_min+label_inset*scaled_ax_range, scaled_ax_max-label_inset*scaled_ax_range, "z", horizontalalignment="left", verticalalignment="top", fontsize=12)
+        ax2.text(scaled_ax_min+label_inset*scaled_ax_range, scaled_ax_max-label_inset*scaled_ax_range, "f(z)", horizontalalignment="left", verticalalignment="top", fontsize=12)
         for z_curve in self.z_pts:
             ax1.plot(np.real(z_curve), np.imag(z_curve), color="#0000B0")
             # Evaluate in a function to limit the scope of a variable with a very general name like z
