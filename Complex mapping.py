@@ -14,8 +14,8 @@ subplots_spacing = 0.1
 plt.subplots_adjust(top=subplots_top, bottom=subplots_bottom, left=subplots_left, right=subplots_right, hspace=subplots_spacing, wspace=subplots_spacing)
 # List of button axes; to be filled later
 (N_button_rows, N_button_cols) = (5, 5)
-(left_edge, top_edge) = (0.7, 0.8)
-[button_width, button_height] = [0.045, 0.1]
+(left_edge, top_edge) = (0.68, 0.8)
+[button_width, button_height] = [0.3/(N_button_cols+N_button_cols*0.25), (subplots_top-subplots_bottom)/(N_button_rows+2+(N_button_rows+1)*0.25)] # Since button margin will be button size/4; add 2 for readout and axes-clearing button
 [button_width_margin, button_height_margin] = [button_width/4, button_height/4]
 button_axes = []
 # Readout in the GUI showing the mapping function; give it button height but the width of all buttons together
