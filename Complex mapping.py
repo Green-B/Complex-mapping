@@ -64,8 +64,14 @@ class ComplexMapper:
             [(scaled_ax_min, scaled_ax_max), scaled_ax_range] = [scaled_ax_lim, scaled_ax_lim[1]-scaled_ax_lim[0]]
             ax.spines[["left", "bottom"]].set_position("zero")
             ax.spines[["right", "top"]].set_visible(False)
-            ax.set_xticks(np.linspace(scaled_ax_min, scaled_ax_max, 5))
-            ax.set_yticks(np.linspace(scaled_ax_min, scaled_ax_max, 5))
+            def simplify_ticks(lim):
+                # Keep the axis limits looking clean as we zoom by choosing a number OTF int x 10^X as the largest tick
+                lim_sign = np.sign(lim)
+                lim_exponent = np.floor(np.log10(lim_sign*lim))
+                return lim_sign*np.fix(lim_sign*lim/(10**lim_exponent))*(10**lim_exponent)
+            (tick_min, tick_max) = (simplify_ticks(scaled_ax_min), simplify_ticks(scaled_ax_max))
+            ax.set_xticks(np.linspace(tick_min, tick_max, 5))
+            ax.set_yticks(np.linspace(tick_min, tick_max, 5))
         label_inset = 0.025
         ax1.text(scaled_ax_min+label_inset*scaled_ax_range, scaled_ax_max-label_inset*scaled_ax_range, "z", horizontalalignment="left", verticalalignment="top", fontsize=12)
         ax2.text(scaled_ax_min+label_inset*scaled_ax_range, scaled_ax_max-label_inset*scaled_ax_range, "f(z)", horizontalalignment="left", verticalalignment="top", fontsize=12)
