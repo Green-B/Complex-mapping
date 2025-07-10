@@ -37,7 +37,7 @@ def display_message(message):
     ax_message.text(0.5, 0.5, message, horizontalalignment="center", verticalalignment="center", fontsize=14)
     plt.draw()
 error_message = """Invalid function syntax - check your complex map and try again.
-Note that multiplication must be explicit, e.g. 2*z not 2z.
+Note that multiplication must be explicit, e.g., 2*z not 2z.
 Click to close this message."""
 
 class ComplexMapper:
